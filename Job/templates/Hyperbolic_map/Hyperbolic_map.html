@@ -1,0 +1,234 @@
+{% load staticfiles %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    {#     类似于jsp的网页当中嵌套python代码 #}
+    {% for jsfile_name in script_list %}
+        <script src="{{ host }}/{{ jsfile_name }}.js"></script>
+    {% endfor %}
+    <script type="text/javascript" src="{% static 'bootstrap-datetimepicker-master/sample in bootstrap v3/jquery/jquery-1.8.3.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'bootstrap-datetimepicker-master/sample in bootstrap v3/bootstrap/js/bootstrap.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'bootstrap-datetimepicker-master/js/bootstrap-datetimepicker.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'bootstrap-datetimepicker-master/js/locales/bootstrap-datetimepicker.fr.js' %}"></script>
+    <link type="text/css" href="{% static 'bootstrap-datetimepicker-master/sample in bootstrap v3/bootstrap/css/bootstrap.min.css' %}" rel="stylesheet" media="screen">
+    <link type="text/css" href="{% static 'bootstrap-datetimepicker-master/css/bootstrap-datetimepicker.min.css' %}" rel="stylesheet" media="screen">
+    <style>
+        #time_selector{
+            visibility: hidden;
+            width: 0px;
+        }
+    </style>
+</head>
+<body>
+<div id="Hm_div_total" style="margin-top: 50px">
+    <input type="text" id="Hm_text"/>
+    <button type="submit" id="Hm_button">提交</button>
+    <div id="Hm">
+        <!-- 显示可视化图表，注意要加safe，表示解析视图层传入的html内容 -->
+        {{ myechart|safe }}
+    </div>
+</div>
+
+
+<div id="Search_ID_total" style="margin-top: 50px">
+    <div>
+        <span>时间</span>
+        <div id="time_div_ID" style="display: inline-block">
+            <select id="time" style="display: inline-block">
+                <option>过去1天</option>
+                <option>过去5天</option>
+                <option>过去10天</option>
+                <option>自选时间段</option>
+            </select>
+            <div id="time_selector" style="display: inline-block">
+                <input size="16" type="text" id="datetimeStart" readonly class="form_datetime"/>
+                --
+                <input size="16" type="text" id="datetimeEnd" readonly class="form_datetime"/>
+            </div>
+        </div>
+        <span>融资增减比例</span>
+        <select id="IDFinance">
+            <option></option>
+            <option>增加</option>
+            <option>减少</option>
+            <option>增加/减少10%以上</option>
+            <option>增加/减少20%以上</option>
+            <option>增加/减少30%以上</option>
+        </select>
+        <span>股价涨跌幅</span>
+        <select id="quote_change">
+            <option></option>
+            <option>上涨</option>
+            <option>下跌</option>
+            <option>上涨10%以上</option>
+            <option>上涨20%以上</option>
+            <option>上涨30%以上</option>
+            <option>下跌10%以上</option>
+            <option>下跌20%以上</option>
+            <option>下跌30%以上</option>
+        </select>
+    <button type="submit" id="search_button">
+        查询
+    </button>
+    </div>
+    <div id="Search_content">
+        <TABLE>
+            <thead>
+            <tr>
+                <td>股票名</td>
+                <td>股票代码</td>
+            </tr>
+            </thead>
+            <tbody id="Search_content_tbody">
+            <tr>
+                <th>12</th>
+                <td>123</td>
+            </tr>
+            </tbody>
+        </TABLE>
+    </div>
+</div>
+
+<script>
+    $(document).ready(function () {
+
+        $("#Hm_button").click(function () {
+            $.ajax({
+                url:"/api/Hm/",
+                type:"POST",
+                datatype:"json",
+                data:{
+                    "stock_code":$("#Hm_text").val()
+                },
+                success:function (data) {
+                    console.info(data)
+                    $('#Hm').empty();
+                    $("#Hm").append(data)
+                },
+                error:function () {
+                    console.info("niaho")
+                    alert("没有该股票")
+                }
+            })
+        });
+        $("#time").change(function () {
+            // 查看究竟哪个存在
+            if ($("#time").val() == "自选时间段")
+            {
+                $("#time_selector").css("visibility","visible");
+                $("#time_selector").css("width","350px");
+            }
+            else{
+                $("#time_selector").css("visibility","hidden");
+                $("#time_selector").css("width","0px");
+            }
+        });
+{#            不是自选时间段#}
+        $("#search_button").click(function () {
+
+            if ($("#time").val() == "自选时间段" && ($("#datetimeStart").val() == "" || $("#datetimeEnd").val() == "")){
+                alert("若您选择了自选时间段, 请在后面的两个框同时输入起始时间和结束时间！！！")
+            }
+            else if($("#time").val() == "自选时间段" && ($("#datetimeEnd").val() == $("#datetimeStart").val())){
+                alert("起始时间和结束时间不能同一天！！！")
+            }
+            else if($("#IDFinance").val() == "" && $("#quote_change").val() == ""){
+                alert("融资增减比例和股价涨跌幅不能同时为空！！！")
+            }
+            else if($("#time").val() != "自选时间段"){
+                 $.ajax({
+                    url:"/api/search_button/",
+                    type:"POST",
+                    datatype:"json",
+                    data:{
+                        "time":$("#time").val(),
+                        "IDFinance":$("#IDFinance").val(),
+                        "quote_change":$("#quote_change").val(),
+                    },
+                    success:function (data) {
+                        console.info(data)
+                         if (data["Data"] != "") {
+                             //返回值 data 在這裡是一個列表
+                             $('#Search_content_tbody').empty();
+                             for (var all_message in data["Data"]) {
+                                 $('#Search_content_tbody').append("        <tr>\n" +
+                                     "<th scope=\"row\">" + data["Data"][all_message]["stock_name"] + "</a></th>\n" +
+                                     "<td>" + data["Data"][all_message]["stock_code"] + "</td>\n" +
+                                     "</tr>")
+                             }
+                         }
+                         else{
+                             alert("没有相关数据")
+                         }
+                    },
+                    error:function () {
+                        console.info("niaho")
+                        alert("没有该股票")
+                    }
+               })
+            }
+{#            自选时间段#}
+            else{
+                 $.ajax({
+                    url:"/api/search_button/",
+                    type:"POST",
+                    datatype:"json",
+                    data:{
+                        "datetimeStart":$("#datetimeStart").val(),
+                        "datetimeEnd":$("#datetimeEnd").val(),
+                        "IDFinance":$("#IDFinance").val(),
+                        "quote_change":$("#quote_change").val(),
+                    },
+                     success: function (data) {
+                         console.info(data)
+                         if (data["Data"] != "") {
+                             //返回值 data 在這裡是一個列表
+                             $('#Search_content_tbody').empty();
+                             for (var all_message in data["Data"]) {
+                                 $('#Search_content_tbody').append("        <tr>\n" +
+                                     "<th scope=\"row\">" + data["Data"][all_message]["stock_name"] + "</a></th>\n" +
+                                     "<td>" + data["Data"][all_message]["stock_code"] + "</td>\n" +
+                                     "</tr>")
+                             }
+                         }
+                         else{
+                             alert("没有相关数据")
+                         }
+                     },
+                    error:function () {
+                        console.info("niaho")
+                        alert("没有该股票")
+                    }
+               })
+            }
+        })
+    })
+</script>
+<script>
+    $("#datetimeStart").datetimepicker({
+        format: 'yyyy-mm-dd',
+        minView:'month',
+        todayBtn : true,
+        language: 'zh-CN',
+        autoclose:true,
+        startDate : '2018 - 7 - 4',
+        endDate : '2019 - 4 - 2',
+    }).on("click",function(){
+        $("#datetimeStart").datetimepicker("setEndDate",$("#datetimeEnd").val());
+    });
+    $("#datetimeEnd").datetimepicker({
+        format: 'yyyy-mm-dd',
+        minView:'month',
+        language: 'zh-CN',
+        todayBtn : true,
+        autoclose:true,
+        startDate : '2018 - 7 - 4',
+        endDate : '2019 - 4 - 2',
+    }).on("click",function(){
+        $("#datetimeEnd").datetimepicker("setStartDate",$("#datetimeStart").val());
+    });
+</script>
+</body>
+</html>
