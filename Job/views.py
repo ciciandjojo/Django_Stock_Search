@@ -45,7 +45,6 @@ def Hm2(request):
 
     return HttpResponse(sl.render_embed())
 
-
 def tooltip_formatter(params):
     #
     # temp_params = params.tolist()
@@ -61,7 +60,7 @@ def line_smooth(stock_code):
     sqlcmd = "select * from `" + stock_code + "`"
     stock_All = pd.read_sql_query(sqlcmd, con=engine)
     # 获取蜡烛图中需要的数据
-    stock = stock_All[[u'日期', u'股票代码', u'股票名称', u'融资融券余额(千亿元)', u'收盘价', u'余额占流通市值比', u'涨跌幅']]
+    stock = stock_All[[u'日期', u'股票代码', u'股票名称', u'融资融券余额(亿元)', u'收盘价', u'余额占流通市值比', u'涨跌幅']]
     stock_new = stock
     stock_new_sorted = stock_new.sort_values('日期', ascending=True)
     stock_code = str(stock_new_sorted['股票代码'][0])
@@ -69,7 +68,7 @@ def line_smooth(stock_code):
     index = stock_new_sorted['日期']
     quote_change = stock_new_sorted['涨跌幅']
     close = stock_new_sorted['收盘价']
-    Margin_Balance = stock_new_sorted['融资融券余额(千亿元)']
+    Margin_Balance = stock_new_sorted['融资融券余额(亿元)']
     line = Line( stock_code + "融资、股价双曲线图" )
     line.add("股价", index, close, is_smooth=True,
              is_datazoom_show=True, datazoom_type="both",  # 展示最下面那条拖动栏并且是共用
@@ -80,7 +79,7 @@ def line_smooth(stock_code):
              tooltip_trigger='axis',
              # tooltip_formatter=tooltip_formatter(quote_change),
              is_more_utils=bool, datazoom_range=[80, 100])
-    line.add("融资(千亿元)", index, Margin_Balance, is_smooth=True,
+    line.add("融资(亿元)", index, Margin_Balance, is_smooth=True,
              is_more_utils=bool,tooltip_axispointer_type = 'cross',
              tooltip_trigger='axis',
              tooltip_formatter=tooltip_formatter(Margin_Balance))
@@ -154,10 +153,10 @@ def get_period(df_stock_code, startTime, endTime, IDFinance=None, quote_change=N
     temp_IDFinance = 0
     if IDFinance:
         print(df_stock_code["股票代码"].tolist()[0])
-        endIDF = df_stock_code[df_stock_code['index'].isin([endIndex])]["融资融券余额(千亿元)"].tolist()[0]
+        endIDF = df_stock_code[df_stock_code['index'].isin([endIndex])]["融资融券余额(亿元)"].tolist()[0]
         print(startIndex,index)
-        print(df_stock_code[df_stock_code['index'].isin([startIndex])]["融资融券余额(千亿元)"].tolist())
-        startIDF = df_stock_code[df_stock_code['index'].isin([startIndex])]["融资融券余额(千亿元)"].tolist()[0]
+        print(df_stock_code[df_stock_code['index'].isin([startIndex])]["融资融券余额(亿元)"].tolist())
+        startIDF = df_stock_code[df_stock_code['index'].isin([startIndex])]["融资融券余额(亿元)"].tolist()[0]
         #融资比例
         IDFRatio = (endIDF - startIDF)/startIDF
 
